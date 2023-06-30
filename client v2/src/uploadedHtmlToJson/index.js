@@ -7,7 +7,7 @@ import {
 } from "./selectors.js";
 
 import {
-  convertPdfToHtmlDoc,
+  convertUploadedFileToHtmlDoc,
   parseDate,
   getCourseFromTr,
   getHeaders,
@@ -16,24 +16,28 @@ import {
   isValidDate,
 } from "./helpers.js";
 
-const timetableHTMLDocument = convertPdfToHtmlDoc();
-const timetable = getTimetableFromHtml(timetableHTMLDocument);
+// const timetable = getTimetableFromUploadedHtml(uploadedHTMLDocument);
 
-console.log(JSON.stringify(timetable));
+// console.log(JSON.stringify(timetable));
 
-function getTimetableFromHtml(timetableHTMLDocument) {
+function getTimetableFromUploadedHtml(uploadedHTMLDocument) {
+  const timetableHTMLDocument =
+    convertUploadedFileToHtmlDoc(uploadedHTMLDocument);
+
   const semester =
     timetableHTMLDocument.querySelector(SEMESTER_SELECTOR).innerHTML;
 
   const timetableName = timetableHTMLDocument
     .querySelector(TIMETABLE_NAME_SELECTOR)
     .textContent.trim();
-    
+
   const timetableReleaseDate = parseDate(
     timetableHTMLDocument
       .querySelector(RELEASE_DATE_SELECTOR)
       .textContent.trim()
   );
+
+  console.log(timetableReleaseDate);
 
   const tables = timetableHTMLDocument.querySelectorAll(TABLES_SELECTOR);
   const headers = getHeaders(timetableHTMLDocument);
@@ -57,12 +61,16 @@ function getTimetableFromHtml(timetableHTMLDocument) {
     const trs = table.querySelectorAll("tr");
 
     let lastValidDate = "";
+
     for (let i = 0; i < trs.length; i++) {
       const course = getCourseFromTr(trs[i], headers);
 
       if (isValidDate(course.date) && !isFooter(course)) {
         //update valid date
-        lastValidDate = parseDate(course.date);
+        lastValidDate = parseDate(
+          course.date,
+          timetableReleaseDate.getFullYear()
+        );
       }
       course.date = lastValidDate;
 
@@ -79,3 +87,5 @@ function getTimetableFromHtml(timetableHTMLDocument) {
     pages: timetablePages,
   };
 }
+
+export default getTimetableFromUploadedHtml;
